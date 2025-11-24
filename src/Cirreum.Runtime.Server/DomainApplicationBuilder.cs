@@ -3,6 +3,7 @@
 using Azure.Identity;
 using Cirreum.Conductor.Configuration;
 using Cirreum.Diagnostics;
+using Cirreum.Http.Filters;
 using Cirreum.Logging.Deferred;
 using Cirreum.Runtime.Diagnostics;
 using CsvHelper.Configuration;
@@ -416,6 +417,12 @@ public sealed class DomainApplicationBuilder
 		// If ConfigureConductor wasn't called, attempt to auto-bind from appsettings
 		var conductorConfig = _conductorConfiguration ?? (options => options.BindConfiguration(this.Configuration));
 		this.Services.AddDomainServices(conductorConfig);
+
+
+		// ******************************************************************************
+		// Add EndPoint Filter that maps Cirreum.Result/T to an HttpResult
+		//
+		this.Services.AddSingleton<ResultToHttpEndpointFilter>();
 
 
 		// ******************************************************************************
