@@ -57,6 +57,7 @@ using System.Reflection;
 public sealed class DomainApplicationBuilder
 	: IServerDomainApplicationBuilder, IHostApplicationBuilder {
 
+	private const string configRuntimeKey = "Cirreum:Runtime";
 	private Action<ConductorOptionsBuilder>? _conductorConfiguration;
 
 	internal static DomainApplicationBuilder CreateAndConfigureBuilder(
@@ -238,7 +239,18 @@ public sealed class DomainApplicationBuilder
 		ForwardedHeaders forwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto) {
 
 		// ******************************************************************************
-		// Configure Global Options
+		// Resolve and Configure our Domain RuntimeType and add DomainEnvironment
+		//
+		var runtimeType = this.Configuration.GetValue(configRuntimeKey, DomainRuntimeType.WebApi);
+		((IHostApplicationBuilder)this).Properties[DomainContext.RuntimeTypeKey] = runtimeType;
+		this._innerBuilder.Services.AddSingleton<IDomainEnvironment>(sp => {
+			var hostEnv = sp.GetRequiredService<IHostEnvironment>();
+			return new DomainEnvironment(hostEnv.ApplicationName, hostEnv.EnvironmentName, runtimeType);
+		});
+
+
+		// ******************************************************************************
+		// Configure our default ASP.NET Options
 		//
 
 		// Configure Kestrel
@@ -262,11 +274,8 @@ public sealed class DomainApplicationBuilder
 		}
 
 		// ******************************************************************************
-		// Add Global Services
+		// Add our default ASP.NET Services
 		//
-
-		// Domain Environment
-		this._innerBuilder.Services.AddSingleton<IDomainEnvironment, DomainEnvironment>();
 
 		// Default Request timeouts
 		this.Services.AddRequestTimeouts(options => {
@@ -282,21 +291,15 @@ public sealed class DomainApplicationBuilder
 			options.TrackStatistics = !this.Environment.IsProduction();
 		});
 
-
-		// ******************************************************************************
 		// Configure CORS
-		//
 		this.ConfigureCors();
 
-
-		// ******************************************************************************
 		// Open Telemetry
-		//
 		this.ConfigureTelemetry();
 
 
 		// ******************************************************************************
-		// Core (Infrastructure) Services
+		// Add our default Cirreum (Infrastructure) Services
 		//
 		this.Services
 			.AddGlobalExceptionHandling()
@@ -396,7 +399,7 @@ public sealed class DomainApplicationBuilder
 	private DomainApplication BuildDomainCore() {
 
 		// ******************************************************************************
-		// Initializers
+		// Add Initializers
 		//
 		this.Services.AddApplicationInitializers();
 
@@ -425,6 +428,5 @@ public sealed class DomainApplicationBuilder
 		return new(this._innerBuilder.Build());
 
 	}
-
 
 }

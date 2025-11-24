@@ -49,6 +49,7 @@ The runtime supports configuration through appsettings.json and environment vari
 ```json
 {
   "Cirreum": {
+    "Runtime": "WebApi",
     "Diagnostics": {
       "EnableTelemetry": true,
       "EnableMetrics": true,
