@@ -6,7 +6,6 @@ using Cirreum.Diagnostics;
 using Cirreum.Http.Filters;
 using Cirreum.Logging.Deferred;
 using Cirreum.Runtime.Diagnostics;
-using CsvHelper.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -226,7 +225,7 @@ public sealed class DomainApplicationBuilder
 
 		foreach (var (level, logs) in issues) {
 			if (logs.Any()) {
-				throw new ConfigurationException(
+				throw new InvalidOperationException(
 					$"Configuration validation failed. The following {level} items were found:\n" +
 					string.Join("\n", logs.Select(l => l.Message))
 				);
