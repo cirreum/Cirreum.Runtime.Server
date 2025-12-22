@@ -198,6 +198,11 @@ public sealed class DomainApplication
 	/// The base URI path can be configured through application settings using the key <see cref="HealthStrings.HealthCheckBaseUriKey"/> (<c>Cirreum:HealthChecks:BaseUri</c>).
 	/// If not specified, it defaults to <see cref="HealthStrings.HealthDefaultBaseUriPath"/> (<c>"/health"</c>).
 	/// </para>
+	/// <para>
+	/// Optionally, the health check endpoints can be restricted to a specific host by setting <see cref="HealthStrings.HealthCheckHostKey"/> (<c>Cirreum:HealthChecks:Host</c>).
+	/// This uses ASP.NET Core's host matching format, which supports wildcards and port specifications (e.g., <c>*:8081</c>, <c>localhost:5001</c>, <c>management.example.com:8090</c>).
+	/// This is useful for exposing health checks only on an internal port or management interface, preventing external access to detailed health information.
+	/// </para>
 	/// </remarks>
 	public void MapDefaultHealthChecks(Func<HttpContext, HealthReport, Task>? responseWriter = null) {
 
@@ -215,7 +220,11 @@ public sealed class DomainApplication
 		// Set up the base URI and Endpoint Group
 		var healthBaseUri = this.Configuration.GetValue<string>(HealthStrings.HealthCheckBaseUriKey)
 			?? HealthStrings.HealthDefaultBaseUriPath;
+		var healthHost = this.Configuration.GetValue<string>(HealthStrings.HealthCheckHostKey);
 		var healthChecks = this._innerApplication.MapGroup(healthBaseUri);
+		if (string.IsNullOrWhiteSpace(healthHost) is false) {
+			healthChecks.RequireHost(healthHost);
+		}
 
 		// Use provided responseWriter or default
 		responseWriter ??= new HealthCheckOptions().ResponseWriter;
