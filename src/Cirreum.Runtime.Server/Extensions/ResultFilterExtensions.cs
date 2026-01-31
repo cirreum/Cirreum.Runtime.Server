@@ -4,6 +4,7 @@ using Cirreum.Http.Filters;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// Extension methods for registering the Cirreum Result-to-HTTP endpoint filter.
@@ -29,7 +30,11 @@ public static class ResultFilterExtensions {
 		this IEndpointRouteBuilder builder,
 		Action<RouteGroupBuilder> configure) {
 		var group = builder.MapGroup("")
-			.AddEndpointFilter<ResultToHttpEndpointFilterWrapper>();
+			.AddEndpointFilter(async (context, next) => {
+				var filter = context.HttpContext.RequestServices
+					.GetRequiredService<ResultToHttpEndpointFilterWrapper>();
+				return await filter.InvokeAsync(context, next);
+			});
 
 		configure(group);
 
@@ -58,7 +63,11 @@ public static class ResultFilterExtensions {
 		string prefix,
 		Action<RouteGroupBuilder> configure) {
 		var group = builder.MapGroup(prefix)
-			.AddEndpointFilter<ResultToHttpEndpointFilterWrapper>();
+			.AddEndpointFilter(async (context, next) => {
+				var filter = context.HttpContext.RequestServices
+					.GetRequiredService<ResultToHttpEndpointFilterWrapper>();
+				return await filter.InvokeAsync(context, next);
+			});
 
 		configure(group);
 
