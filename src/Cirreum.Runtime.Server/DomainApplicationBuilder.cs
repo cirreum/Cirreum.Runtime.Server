@@ -6,6 +6,7 @@ using Cirreum.Diagnostics;
 using Cirreum.Http.Filters;
 using Cirreum.Logging.Deferred;
 using Cirreum.Runtime.Diagnostics;
+using Cirreum.Runtime.Extensions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -421,6 +422,7 @@ public sealed class DomainApplicationBuilder
 		// Add EndPoint Filter that maps Cirreum.Result/T to an HttpResult
 		//
 		this.Services.AddSingleton<ResultToHttpEndpointFilter>();
+		this.Services.AddSingleton<ResultToHttpEndpointFilterWrapper>();
 
 
 		// ******************************************************************************
