@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<RootNamespace>Cirreum.Runtime</RootNamespace>
@@ -15,10 +15,10 @@
 		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />
 		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0" />
 		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
-		<PackageReference Include="Cirreum.Logging.Deferred" Version="1.0.107" />
-		<PackageReference Include="Cirreum.Cors" Version="1.0.105" />
-		<PackageReference Include="Cirreum.Startup" Version="1.0.109" />
-		<PackageReference Include="Cirreum.Services.Server" Version="1.0.31" />
+		<PackageReference Include="Cirreum.Logging.Deferred" Version="1.0.108" />
+		<PackageReference Include="Cirreum.Cors" Version="1.0.106" />
+		<PackageReference Include="Cirreum.Startup" Version="1.0.110" />
+		<PackageReference Include="Cirreum.Services.Server" Version="1.0.32" />
 	</ItemGroup>
 
 	<ItemGroup>
