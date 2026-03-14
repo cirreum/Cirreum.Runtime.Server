@@ -18,7 +18,7 @@
 		<PackageReference Include="Cirreum.Logging.Deferred" Version="1.0.110" />
 		<PackageReference Include="Cirreum.Cors" Version="1.0.107" />
 		<PackageReference Include="Cirreum.Startup" Version="1.0.112" />
-		<PackageReference Include="Cirreum.Services.Server" Version="1.0.34" />
+		<PackageReference Include="Cirreum.Services.Server" Version="1.0.35" />
 	</ItemGroup>
 
 	<ItemGroup>
