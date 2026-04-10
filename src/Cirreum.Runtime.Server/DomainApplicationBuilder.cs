@@ -405,6 +405,8 @@ public sealed class DomainApplicationBuilder
 		this.Services.AddDefaultDomainDocumenter();
 		this.Services.AddDefaultAuthorizationEvaluator();
 		this.Services.AddDefaultAuthenticationBoundaryResolver();
+		this.Services.AddGrantAuthorization(this.Configuration);
+		this.Services.AddResourceAccess(_ => { });
 
 
 		// ******************************************************************************
