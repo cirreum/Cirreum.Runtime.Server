@@ -150,14 +150,11 @@ public sealed class DomainApplicationBuilder
 					serviceNamespace: appNamespace,
 					serviceVersion: appVersion,
 					serviceInstanceId: appId))
+			.AddCirreum()
 			.WithMetrics(metrics => {
 				metrics.AddAspNetCoreInstrumentation()
 					   .AddHttpClientInstrumentation()
-					   .AddRuntimeInstrumentation()
-					   .AddMeter(CirreumTelemetry.Meters.ConductorDispatcher)
-					   .AddMeter(CirreumTelemetry.Meters.ConductorPublisher)
-					   .AddMeter(CirreumTelemetry.Meters.ConductorCache)
-					   .AddMeter(CirreumTelemetry.Meters.RemoteServicesClient);
+					   .AddRuntimeInstrumentation();
 			})
 			.WithTracing(tracing => {
 				var samplingRatio =
@@ -168,10 +165,7 @@ public sealed class DomainApplicationBuilder
 				tracing.SetSampler(new TraceIdRatioBasedSampler(samplingRatio));
 				tracing
 					.AddAspNetCoreInstrumentation()
-					.AddHttpClientInstrumentation()
-					.AddSource(CirreumTelemetry.ActivitySources.ConductorDispatcher)
-					.AddSource(CirreumTelemetry.ActivitySources.ConductorPublisher)
-					.AddSource(CirreumTelemetry.ActivitySources.RemoteServicesClient);
+					.AddHttpClientInstrumentation();
 			});
 
 		// OTLP Exporter
@@ -408,8 +402,9 @@ public sealed class DomainApplicationBuilder
 		// ******************************************************************************
 		// Authorization Services
 		//
+		this.Services.AddDefaultDomainDocumenter();
 		this.Services.AddDefaultAuthorizationEvaluator();
-		this.Services.AddDefaultAuthorizationDocumenter();
+		this.Services.AddDefaultAuthenticationBoundaryResolver();
 
 
 		// ******************************************************************************

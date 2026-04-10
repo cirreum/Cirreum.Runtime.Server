@@ -11,14 +11,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Identity.Web" Version="4.6.0" />
+		<PackageReference Include="Microsoft.Identity.Web" Version="4.7.0" />
 		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />
-		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.2" />
 		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
 		<PackageReference Include="Cirreum.Logging.Deferred" Version="1.0.110" />
 		<PackageReference Include="Cirreum.Cors" Version="1.0.107" />
-		<PackageReference Include="Cirreum.Startup" Version="1.0.112" />
-		<PackageReference Include="Cirreum.Services.Server" Version="1.0.39" />
+		<PackageReference Include="Cirreum.Startup" Version="1.0.113" />
+		<PackageReference Include="Cirreum.Services.Server" Version="1.0.41" />
 	</ItemGroup>
 
 	<ItemGroup>
