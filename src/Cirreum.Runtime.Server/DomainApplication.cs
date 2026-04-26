@@ -1,6 +1,7 @@
 ﻿namespace Cirreum.Runtime;
 
 using Cirreum.Health;
+using Cirreum.Introspection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -357,6 +358,36 @@ public sealed class DomainApplication
 		this._innerApplication = innerApplication;
 	}
 
+
+	/// <summary>
+	/// Runs the configured authorization analyzers and throws
+	/// <see cref="AuthorizationConfigurationException"/> if any reports an error.
+	/// </summary>
+	/// <param name="options">
+	/// Optional analysis options (e.g., excluded categories, max hierarchy depth). Defaults
+	/// to <see cref="AnalysisOptions.Default"/>.
+	/// </param>
+	/// <exception cref="AuthorizationConfigurationException">
+	/// One or more analyzers reported <see cref="IssueSeverity.Error"/> findings.
+	/// </exception>
+	public void ValidateAuthorizationConfiguration(
+		AnalysisOptions? options = null
+	) => this.Services.ValidateAuthorizationConfiguration(options);
+
+	/// <summary>
+	/// Same as <see cref="ValidateAuthorizationConfiguration"/> but returns the report
+	/// instead of throwing — for callers that want to log or branch on the result.
+	/// Returns <see langword="null"/> when validation passes.
+	/// </summary>
+	/// <param name="options">Optional analysis options.</param>
+	/// <returns>
+	/// The full <see cref="AnalysisReport"/> if Error-severity findings were detected, or
+	/// <see langword="null"/> when the configuration passes.
+	/// </returns>
+	public AnalysisReport? CheckAuthorizationConfiguration(
+		AnalysisOptions? options = null
+	) => this.Services.CheckAuthorizationConfiguration(options);
+
 	/// <summary>
 	/// Executes any registered <see cref="ISystemInitializer"/>,
 	/// <see cref="IAutoInitialize"/> or <see cref="IStartupTask"/> services, and then runs
@@ -373,6 +404,9 @@ public sealed class DomainApplication
 
 		// Initialize the application
 		await this.Services.InitializeApplicationAsync();
+
+		// Validate authorization configuration (e.g., policies, schemes, etc.) before processing any requests
+		this.Services.ValidateAuthorizationConfiguration();
 
 		// Run as normal
 		var runTask = this._innerApplication.RunAsync(url);
