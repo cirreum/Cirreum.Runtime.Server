@@ -358,10 +358,10 @@ public sealed class DomainApplication
 		this._innerApplication = innerApplication;
 	}
 
-
 	/// <summary>
-	/// Runs the configured authorization analyzers and throws
-	/// <see cref="AuthorizationConfigurationException"/> if any reports an error.
+	/// Runs the configured authorization analyzers against the registered policies, schemes,
+	/// and related wiring, and throws <see cref="AuthorizationConfigurationException"/> if any
+	/// analyzer reports an <see cref="IssueSeverity.Error"/> finding.
 	/// </summary>
 	/// <param name="options">
 	/// Optional analysis options (e.g., excluded categories, max hierarchy depth). Defaults
@@ -370,21 +370,24 @@ public sealed class DomainApplication
 	/// <exception cref="AuthorizationConfigurationException">
 	/// One or more analyzers reported <see cref="IssueSeverity.Error"/> findings.
 	/// </exception>
-	public void ValidateAuthorizationConfiguration(
+	public void ValidateAuthorization(
 		AnalysisOptions? options = null
 	) => this.Services.ValidateAuthorizationConfiguration(options);
 
 	/// <summary>
-	/// Same as <see cref="ValidateAuthorizationConfiguration"/> but returns the report
-	/// instead of throwing — for callers that want to log or branch on the result.
-	/// Returns <see langword="null"/> when validation passes.
+	/// Runs the configured authorization analyzers and returns the resulting
+	/// <see cref="AnalysisReport"/> instead of throwing — for callers that want to log,
+	/// branch on, or aggregate findings rather than fail fast.
 	/// </summary>
-	/// <param name="options">Optional analysis options.</param>
+	/// <param name="options">
+	/// Optional analysis options (e.g., excluded categories, max hierarchy depth). Defaults
+	/// to <see cref="AnalysisOptions.Default"/>.
+	/// </param>
 	/// <returns>
-	/// The full <see cref="AnalysisReport"/> if Error-severity findings were detected, or
-	/// <see langword="null"/> when the configuration passes.
+	/// The full <see cref="AnalysisReport"/> if any <see cref="IssueSeverity.Error"/>
+	/// findings were detected, or <see langword="null"/> when no errors were found.
 	/// </returns>
-	public AnalysisReport? CheckAuthorizationConfiguration(
+	public AnalysisReport? AnalyzeAuthorization(
 		AnalysisOptions? options = null
 	) => this.Services.CheckAuthorizationConfiguration(options);
 
@@ -405,8 +408,8 @@ public sealed class DomainApplication
 		// Initialize the application
 		await this.Services.InitializeApplicationAsync();
 
-		// Validate authorization configuration (e.g., policies, schemes, etc.) before processing any requests
-		this.Services.ValidateAuthorizationConfiguration();
+		// Fail fast if any authorization analyzer reports an Error-severity finding
+		this.ValidateAuthorization();
 
 		// Run as normal
 		var runTask = this._innerApplication.RunAsync(url);
