@@ -408,9 +408,6 @@ public sealed class DomainApplication
 		// Initialize the application
 		await this.Services.InitializeApplicationAsync();
 
-		// Fail fast if any authorization analyzer reports an Error-severity finding
-		this.ValidateAuthorization();
-
 		// Run as normal
 		var runTask = this._innerApplication.RunAsync(url);
 
