@@ -2,7 +2,6 @@
 
 using Azure.Identity;
 using Cirreum.Conductor.Configuration;
-using Cirreum.Diagnostics;
 using Cirreum.Http.Filters;
 using Cirreum.Logging.Deferred;
 using Cirreum.Runtime.Diagnostics;
@@ -402,7 +401,6 @@ public sealed class DomainApplicationBuilder
 		// ******************************************************************************
 		// Authorization Services
 		//
-		this.Services.AddDefaultDomainDocumenter();
 		this.Services.AddDefaultAuthorizationEvaluator();
 		this.Services.AddDefaultAuthenticationBoundaryResolver();
 		this.Services.AddGrantAuthorization(this.Configuration);

@@ -1,7 +1,6 @@
 ﻿namespace Cirreum.Runtime;
 
 using Cirreum.Health;
-using Cirreum.Introspection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -357,39 +356,6 @@ public sealed class DomainApplication
 	internal DomainApplication(WebApplication innerApplication) {
 		this._innerApplication = innerApplication;
 	}
-
-	/// <summary>
-	/// Runs the configured authorization analyzers against the registered policies, schemes,
-	/// and related wiring, and throws <see cref="AuthorizationConfigurationException"/> if any
-	/// analyzer reports an <see cref="IssueSeverity.Error"/> finding.
-	/// </summary>
-	/// <param name="options">
-	/// Optional analysis options (e.g., excluded categories, max hierarchy depth). Defaults
-	/// to <see cref="AnalysisOptions.Default"/>.
-	/// </param>
-	/// <exception cref="AuthorizationConfigurationException">
-	/// One or more analyzers reported <see cref="IssueSeverity.Error"/> findings.
-	/// </exception>
-	public void ValidateAuthorization(
-		AnalysisOptions? options = null
-	) => this.Services.ValidateAuthorizationConfiguration(options);
-
-	/// <summary>
-	/// Runs the configured authorization analyzers and returns the resulting
-	/// <see cref="AnalysisReport"/> instead of throwing — for callers that want to log,
-	/// branch on, or aggregate findings rather than fail fast.
-	/// </summary>
-	/// <param name="options">
-	/// Optional analysis options (e.g., excluded categories, max hierarchy depth). Defaults
-	/// to <see cref="AnalysisOptions.Default"/>.
-	/// </param>
-	/// <returns>
-	/// The full <see cref="AnalysisReport"/> if any <see cref="IssueSeverity.Error"/>
-	/// findings were detected, or <see langword="null"/> when no errors were found.
-	/// </returns>
-	public AnalysisReport? AnalyzeAuthorization(
-		AnalysisOptions? options = null
-	) => this.Services.CheckAuthorizationConfiguration(options);
 
 	/// <summary>
 	/// Executes any registered <see cref="ISystemInitializer"/>,
