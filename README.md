@@ -15,6 +15,7 @@
 ## Key Features
 
 - **Simplified Application Bootstrap** - Fluent builder pattern for configuring ASP.NET Core applications with sensible defaults
+- **Default Middleware Pipeline** - `UseDefaultMiddleware()` wires the canonical ordering for stateless APIs, including the HTTP→`IInvocationContext` bridge for the unified inbound seam (see [ADR-0002](https://github.com/cirreum/Cirreum.DevOps/blob/main/docs/adr/0002-unified-invocation-context.md))
 - **Built-in Observability** - OpenTelemetry integration with Azure Monitor and OTLP exporter support
 - **Health Check Endpoints** - Pre-configured startup, liveness, readiness, and internal health checks
 - **Authentication Ready** - Microsoft Identity Web integration for authentication and authorization
@@ -41,6 +42,28 @@ app.MapGet("/", () => "Hello World!");
 // Run the application
 await app.RunAsync();
 ```
+
+## Default Middleware Pipeline
+
+`app.UseDefaultMiddleware()` configures the pipeline in this order:
+
+```csharp
+app
+    .UseExceptionHandler()
+    .UseForwardedHeaders()
+    .UseStaticFiles()
+    .UseRouting()
+    .UseRequestTimeouts()
+    .UseConfiguredCors()
+    .UseAuthentication()
+    .UseAuthorization()
+    .UseInvocationContext()    // HTTP→IInvocationContext bridge
+    .UseOutputCache();
+```
+
+`UseInvocationContext()` runs late on purpose — after authentication and authorization complete — so the snapshotted `IInvocationContext.User` reflects the fully-resolved authenticated principal. Framework-internal code (`UserStateAccessor`, the conductor pipeline, authorizers, audit) then reads identity through the unified seam regardless of transport.
+
+**Not included by design:** Response Compression (handle at proxy/CDN), Response Caching (superseded by Output Caching), Rate Limiting (configure per requirements), Sessions (this framework targets stateless APIs).
 
 ## Configuration
 
@@ -87,7 +110,7 @@ The runtime supports configuration through appsettings.json and environment vari
 
 ## Versioning
 
-{REPO-NAME} follows [Semantic Versioning](https://semver.org/):
+Cirreum.Runtime.Server follows [Semantic Versioning](https://semver.org/):
 
 - **Major** - Breaking API changes
 - **Minor** - New features, backward compatible

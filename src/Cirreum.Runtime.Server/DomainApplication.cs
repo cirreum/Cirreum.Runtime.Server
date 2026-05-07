@@ -110,8 +110,9 @@ public sealed class DomainApplication
 	/// - CORS (Cross-Origin Resource Sharing)
 	/// - Authentication
 	/// - Authorization
+	/// - Invocation Context (HTTP→IInvocationContext bridge)
 	/// - Output Caching (modern replacement for response caching)
-	/// 
+	///
 	/// <para>
 	/// <strong>Not Included (By Design):</strong>
 	/// </para>
@@ -150,8 +151,9 @@ public sealed class DomainApplication
 			.UseRouting()
 			.UseRequestTimeouts()
 			.UseConfiguredCors() // Apply CORS policies
-			.UseAuthentication() // Authenticate the user
-			.UseAuthorization() // Authorize the user
+			.UseAuthentication()    // Authenticate the user
+			.UseAuthorization()     // Authorize the user
+			.UseInvocationContext() // Publish IInvocationContext for the request
 			.UseOutputCache();
 	}
 
