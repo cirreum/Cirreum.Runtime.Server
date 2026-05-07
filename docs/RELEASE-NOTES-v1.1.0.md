@@ -43,9 +43,9 @@ Placement rationale: the snapshotted `IInvocationContext.User` must reflect the 
 - **`Cirreum.Services.Server`** — `1.1.0` → `1.2.0`. Brings the `UseInvocationContext()` extension and the `IInvocationContextAccessor` registration in `AddCoreServices()`.
 - **`Azure.Monitor.OpenTelemetry.AspNetCore`** — `1.4.0` → `1.5.0`.
 
-## Removed dependencies
+## Dependency graph cleanup
 
-- **`Microsoft.Identity.Web`** — removed as a direct package reference. The library was not used anywhere in Runtime.Server's source code; the reference appears to have been carried forward from earlier architecture and is now correctly pruned.
+- **`Microsoft.Identity.Web`** — no longer a direct package reference. The library was not used anywhere in Runtime.Server's source code; the reference appears to have been carried forward from earlier architecture and is now correctly pruned. This is a graph change, not an API change — Runtime.Server's public surface is unchanged.
 
 ### Migration
 
