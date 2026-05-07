@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-07
+
 ### Added
 
 - **`UseDefaultMiddleware()` now wires `app.UseInvocationContext()`** between `UseAuthorization()` and `UseOutputCache()`. Apps using the default pipeline pick up the HTTP→`IInvocationContext` bridge automatically with no code change. Placement is the canonical late-spot — after authentication and authorization complete, before endpoint execution — so the snapshotted invocation reflects the fully-resolved authenticated principal. Per [ADR-0002](https://github.com/cirreum/Cirreum.DevOps/blob/main/docs/adr/0002-unified-invocation-context.md).
