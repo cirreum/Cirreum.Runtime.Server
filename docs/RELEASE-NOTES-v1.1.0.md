@@ -71,10 +71,10 @@ This is the right kind of fix — addressing the root cause (a stale unused depe
 
 ## What this enables
 
-This release is #7 in the [Invocation family rollout](https://github.com/cirreum/Cirreum.DevOps/blob/main/docs/InvocationContext/03-MIGRATION.md). With it landed, the foundation (#1–#7) is complete for HTTP:
+This release is #7 in the Invocation family rollout. With it landed, the foundation (#1–#7) is complete for HTTP:
 
 - ✓ `Cirreum.Providers 1.1.0` — `ProviderType.Invocation`
-- ✓ `Cirreum.InvocationProvider 1.0.1` — server-side L2 abstractions
+- ✓ `Cirreum.InvocationProvider 1.0.1` — server-side abstractions
 - ✓ `Cirreum.Core 5.1.0` — client-side `IRemoteConnection` abstraction
 - ✓ `Cirreum.Services.Server 1.2.0` — HTTP→`IInvocationContext` bridge
 - ✓ `Cirreum.Runtime.Server 1.1.0` *(this release)* — auto-wires the bridge
@@ -103,6 +103,4 @@ For apps composing the pipeline manually: nothing to do *here* — you should al
 
 - `CHANGELOG.md` — condensed change list for `1.1.0`.
 - [`Cirreum.Services.Server 1.2.0`](https://www.nuget.org/packages/Cirreum.Services.Server) — the bridge middleware this release wires.
-- [`Cirreum.InvocationProvider 1.0.1`](https://www.nuget.org/packages/Cirreum.InvocationProvider) — the L2 abstractions the seam publishes.
-- [ADR-0002](https://github.com/cirreum/Cirreum.DevOps/blob/main/docs/adr/0002-unified-invocation-context.md) — the foundational design decision.
-- [Invocation family migration plan](https://github.com/cirreum/Cirreum.DevOps/blob/main/docs/InvocationContext/03-MIGRATION.md) — full rollout sequence.
+- [`Cirreum.InvocationProvider 1.0.1`](https://www.nuget.org/packages/Cirreum.InvocationProvider) — the abstractions the seam publishes.

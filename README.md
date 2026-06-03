@@ -15,7 +15,7 @@
 ## Key Features
 
 - **Simplified Application Bootstrap** - Fluent builder pattern for configuring ASP.NET Core applications with sensible defaults
-- **Default Middleware Pipeline** - `UseDefaultMiddleware()` wires the canonical ordering for stateless APIs, including the HTTP→`IInvocationContext` bridge for the unified inbound seam (see [ADR-0002](https://github.com/cirreum/Cirreum.DevOps/blob/main/docs/adr/0002-unified-invocation-context.md))
+- **Default Middleware Pipeline** - `UseDefaultMiddleware()` wires the canonical ordering for stateless APIs, including the HTTP→`IInvocationContext` bridge for the unified inbound seam
 - **Built-in Observability** - OpenTelemetry integration with Azure Monitor and OTLP exporter support
 - **Health Check Endpoints** - Pre-configured startup, liveness, readiness, and internal health checks
 - **Authentication Ready** - Microsoft Identity Web integration for authentication and authorization

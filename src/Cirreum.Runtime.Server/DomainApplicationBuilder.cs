@@ -141,7 +141,7 @@ public sealed class DomainApplicationBuilder
 		var asmName = Assembly.GetEntryAssembly()?.GetName();
 		var appVersion = asmName?.Version?.ToString() ?? "0.0.0";
 		var appName = this.Environment.ApplicationName;
-		var appId = SystemEnvironment.Instance.MachineName ?? Guid.NewGuid().ToString("n");
+		var appId = System.Environment.MachineName ?? Guid.NewGuid().ToString("n");
 		var otelBuilder = this.Services.AddOpenTelemetry()
 			.ConfigureResource(resource =>
 				resource.AddService(
@@ -202,7 +202,7 @@ public sealed class DomainApplicationBuilder
 
 	}
 	private string? ResolveAppInsightsConnectionString(AzureMonitorOptions? azureMonitor) {
-		return SystemEnvironment.Instance.GetEnvironmentVariable(
+		return System.Environment.GetEnvironmentVariable(
 				DiagnosticsConfigurationKeys.AppInsightsConnectionStringEnv)
 			?? this.Configuration[DiagnosticsConfigurationKeys.AzureMonitorConnectionString]
 			?? this.Configuration[DiagnosticsConfigurationKeys.ApplicationInsightsConnectionString]
@@ -401,6 +401,13 @@ public sealed class DomainApplicationBuilder
 		// ******************************************************************************
 		// Authorization Services
 		//
+		// ASP.NET authorization core — baseline so the spine's UseDefaultMiddleware() →
+		// UseAuthorization() works for every Cirreum server, independent of whether the
+		// opt-in Authentication track is referenced. AddAuthorizationBuilder is idempotent
+		// (its core services register via TryAdd), so a later AddAuthentication call that
+		// also composes authorization is harmless.
+		this.Services.AddAuthorizationBuilder();
+
 		this.Services.AddDefaultAuthorizationEvaluator();
 		this.Services.AddDefaultAuthenticationBoundaryResolver();
 		this.Services.AddGrantAuthorization(this.Configuration);
@@ -418,6 +425,16 @@ public sealed class DomainApplicationBuilder
 		//
 		this.Services.AddSingleton<ResultToHttpEndpointFilter>();
 		this.Services.AddSingleton<ResultToHttpEndpointFilterWrapper>();
+
+
+		// ******************************************************************************
+		// SignalR invocation support — if the app opted into SignalR (native
+		// services.AddSignalR()), contribute Cirreum's InvocationContextHubFilter so
+		// IInvocationContext is published per Hub method invocation. No-op when SignalR is
+		// absent. Runs here, at Build()-time, so detection sees the app's AddSignalR()
+		// (registered after CreateBuilder but before Build).
+		//
+		this.Services.TryAddSignalRInvocationFilter();
 
 
 		// ******************************************************************************

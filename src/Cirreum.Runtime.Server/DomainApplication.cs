@@ -37,7 +37,7 @@ public sealed class DomainApplication
 	/// </remarks>
 	public void UseLandingPage() {
 
-		var customLandingPageUri = SystemEnvironment.Instance.GetEnvironmentVariable(LandingPageEnvVariable);
+		var customLandingPageUri = System.Environment.GetEnvironmentVariable(LandingPageEnvVariable);
 		if (customLandingPageUri.HasValue() is false) {
 			customLandingPageUri = this.Configuration.GetSection(LandingPageConfigurationName).Value ?? "";
 		}
