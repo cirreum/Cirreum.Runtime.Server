@@ -253,11 +253,10 @@ public sealed class DomainApplicationBuilder
 				o.AddServerHeader = false;
 			});
 
-		// Support Web-Farm/Clustering
-		this.Services
-			.Configure<ForwardedHeadersOptions>(options => {
-				options.ForwardedHeaders = forwardedHeaders;
-			});
+		// Support Web-Farm/Clustering — trusted-proxy posture from Cirreum:ForwardedHeaders (ADR-0023).
+		// Binds KnownProxies/KnownNetworks/ForwardLimit/Headers, exposes the logged trust-all escape
+		// hatch, and fails fast in non-Development when forwarding is on but no posture is declared.
+		this.Services.ConfigureForwardedHeaders(this.Configuration, this.Environment, forwardedHeaders);
 
 		// Allow more time to shutdown
 		if (shutdownTimeoutMinutes > 0) {
