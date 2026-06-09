@@ -52,7 +52,7 @@ internal static class ForwardedHeadersConfigurationExtensions {
 			if (config.TrustAllProxies) {
 				// Explicit, logged escape hatch: honor forwarded headers from ANY peer.
 				options.KnownProxies.Clear();
-				options.KnownNetworks.Clear();
+				options.KnownIPNetworks.Clear();
 				return;
 			}
 
@@ -64,7 +64,7 @@ internal static class ForwardedHeadersConfigurationExtensions {
 
 			foreach (var network in config.KnownNetworks) {
 				if (System.Net.IPNetwork.TryParse(network, out var net)) {
-					options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(net.BaseAddress, net.PrefixLength));
+					options.KnownIPNetworks.Add(net);
 				}
 			}
 		});
