@@ -1,125 +1,89 @@
 namespace Cirreum.Runtime.Extensions;
 
 using Cirreum.Logging.Deferred;
-using Cirreum.Runtime.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System.Net;
 
 /// <summary>
-/// Binds the <c>Cirreum:ForwardedHeaders</c> section into <see cref="ForwardedHeadersOptions"/>
-/// and enforces the trusted-proxy boot posture (ADR-0023).
+/// Configures forwarded-headers processing with a platform-gated default (ADR-0023). A detected managed
+/// ingress (Azure Container Apps / App Service) gets trust-one-hop <c>PlatformIngress</c>; Development and
+/// undetected platforms stay on ASP.NET's loopback-only secure default.
 /// </summary>
+/// <remarks>
+/// There is no appsettings binding and no boot fail-fast: forwarded scheme / IP / host are not load-bearing
+/// for any Cirreum authentication decision, so the default exists only for generic correctness — a real
+/// client IP for audit logs and a correct <c>Request.Scheme</c> behind a TLS-terminating edge. Apps with a
+/// custom proxy topology override through ASP.NET's own <c>services.Configure&lt;ForwardedHeadersOptions&gt;</c>.
+/// </remarks>
 internal static class ForwardedHeadersConfigurationExtensions {
 
 	/// <summary>
-	/// Configures forwarded-headers processing from the <c>Cirreum:ForwardedHeaders</c> section and
-	/// validates the trusted-proxy posture. The validation emits a deferred <c>Error</c> (which the
-	/// always-on <c>ValidateDeferredLogs()</c> turns into a fail-fast at <c>Build()</c>) when a
-	/// non-Development host enables forwarding without declaring a posture.
+	/// Applies the platform-gated forwarded-headers default.
 	/// </summary>
+	/// <remarks>
+	/// On a detected managed platform (ACA via <c>CONTAINER_APP_NAME</c>, App Service via
+	/// <c>WEBSITE_SITE_NAME</c>) it trusts exactly one ingress hop — <paramref name="forwardedHeaders"/>,
+	/// <c>ForwardLimit = 1</c>, cleared <c>KnownProxies</c> / <c>KnownIPNetworks</c>. That is safe because the
+	/// container is reachable only through the managed ingress, and <c>ForwardLimit = 1</c> consumes the
+	/// ingress-stamped rightmost <c>X-Forwarded-*</c> value while ignoring any client-forged ones. On
+	/// Development or an undetected platform it leaves ASP.NET's loopback-only default in place — trust-all is
+	/// never applied off a detected managed platform, which would be a spoofing hole on a directly-exposed host.
+	/// </remarks>
 	/// <param name="services">The service collection.</param>
-	/// <param name="configuration">The application configuration.</param>
-	/// <param name="environment">The host environment (Development is exempt from fail-fast).</param>
-	/// <param name="defaultHeaders">The runtime default forwarded-headers flags, used when the config does not override <see cref="ForwardedHeadersConfiguration.Headers"/>.</param>
-	internal static void ConfigureForwardedHeaders(
+	/// <param name="environment">The host environment (Development stays loopback-only).</param>
+	/// <param name="forwardedHeaders">The forwarded-header flags the middleware processes (the runtime default
+	/// is <c>XForwardedFor | XForwardedProto</c> — host is deliberately not forwarded).</param>
+	internal static void ConfigurePlatformIngress(
 		this IServiceCollection services,
-		IConfiguration configuration,
 		IHostEnvironment environment,
-		ForwardedHeaders defaultHeaders) {
+		ForwardedHeaders forwardedHeaders) {
 
-		var config = configuration
-			.GetSection(ForwardedHeadersConfiguration.SectionName)
-			.Get<ForwardedHeadersConfiguration>() ?? new();
-
-		var headers = config.Headers ?? defaultHeaders;
-		if (config.ForwardHost) {
-			headers |= ForwardedHeaders.XForwardedHost;
-		}
-
-		var hasExplicitProxies = config.KnownProxies.Length > 0 || config.KnownNetworks.Length > 0;
+		var managedPlatform = DetectManagedPlatform();
+		var applyPlatformIngress = managedPlatform is not null && !environment.IsDevelopment();
 
 		services.Configure<ForwardedHeadersOptions>(options => {
-			options.ForwardedHeaders = headers;
+			options.ForwardedHeaders = forwardedHeaders;
 
-			if (config.ForwardLimit.HasValue) {
-				options.ForwardLimit = config.ForwardLimit;
-			}
-
-			if (config.TrustAllProxies) {
-				// Explicit, logged escape hatch: honor forwarded headers from ANY peer.
+			if (applyPlatformIngress) {
+				// PlatformIngress: trust exactly the one managed-ingress hop.
+				options.ForwardLimit = 1;
 				options.KnownProxies.Clear();
 				options.KnownIPNetworks.Clear();
-				return;
 			}
 
-			foreach (var proxy in config.KnownProxies) {
-				if (IPAddress.TryParse(proxy, out var ip)) {
-					options.KnownProxies.Add(ip);
-				}
-			}
-
-			foreach (var network in config.KnownNetworks) {
-				if (System.Net.IPNetwork.TryParse(network, out var net)) {
-					options.KnownIPNetworks.Add(net);
-				}
-			}
+			// Development / undetected platform: leave KnownProxies / KnownIPNetworks at ASP.NET's loopback-only
+			// default, so forwarded values are honored only from loopback (dropped behind a non-loopback proxy —
+			// harmless, since no auth impl consumes scheme / IP / host).
 		});
 
-		ValidatePosture(environment, headers, hasExplicitProxies, config);
+		if (applyPlatformIngress) {
+			Logger.CreateDeferredLogger().LogInformation(
+				"Forwarded headers: a managed platform (Azure Container Apps / App Service) was detected; applying " +
+				"PlatformIngress — trusting one ingress hop, so audit logs and Request.Scheme reflect the " +
+				"ingress-stamped X-Forwarded-* values (ADR-0023).");
+		} else if (!environment.IsDevelopment()) {
+			// No boot fail-fast (ADR-0023): an undetected-but-actually-proxied host silently drops forwarded
+			// values, so leave a non-blocking breadcrumb pointing at the override rather than blocking boot.
+			Logger.CreateDeferredLogger().LogInformation(
+				"Forwarded headers: no managed platform detected (not Azure Container Apps or App Service), so " +
+				"X-Forwarded-* are honored from loopback only. If this host is behind a proxy or load balancer and " +
+				"needs the real client IP / scheme (audit, TLS-terminated scheme), configure " +
+				"services.Configure<ForwardedHeadersOptions>(...) with your trusted KnownIPNetworks (ADR-0023).");
+		}
 	}
 
-	private static void ValidatePosture(
-		IHostEnvironment environment,
-		ForwardedHeaders headers,
-		bool hasExplicitProxies,
-		ForwardedHeadersConfiguration config) {
-
-		// Development is exempt — loopback-only is correct locally and needs no declaration.
-		if (environment.IsDevelopment()) {
-			return;
+	private static string? DetectManagedPlatform() {
+		if (Environment.GetEnvironmentVariable("CONTAINER_APP_NAME") is not null) {
+			return "Azure Container Apps";
 		}
 
-		// Forwarding effectively disabled — nothing to validate.
-		if (headers == ForwardedHeaders.None) {
-			return;
+		if (Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME") is not null) {
+			return "Azure App Service";
 		}
 
-		var logger = Logger.CreateDeferredLogger();
-
-		// Deliberate trust-all posture: surfaced (Information), never blocking.
-		if (config.TrustAllProxies) {
-			logger.LogInformation(
-				"Forwarded-headers trust-all escape hatch is enabled (Cirreum:ForwardedHeaders:TrustAllProxies=true): " +
-				"X-Forwarded-* headers are honored from ANY peer, which is spoofable. Deliberate posture for " +
-				"environments that cannot enumerate proxy addresses (ADR-0023).");
-			return;
-		}
-
-		// Proper trusted-proxy posture declared — nothing to surface.
-		if (hasExplicitProxies) {
-			return;
-		}
-
-		// Deliberate loopback-only posture: surfaced (Information), never blocking.
-		if (config.AcknowledgeLoopbackOnly) {
-			logger.LogInformation(
-				"Forwarded-headers posture is loopback-only (Cirreum:ForwardedHeaders:AcknowledgeLoopbackOnly=true): " +
-				"X-Forwarded-* headers are honored only from loopback. Correct for a no-proxy deployment; behind a " +
-				"proxy the client scheme / IP / host will be dropped (ADR-0023).");
-			return;
-		}
-
-		// Non-Development + forwarding enabled + no posture declared → fail fast (deferred Error).
-		logger.LogError(
-			"Forwarded-headers processing is enabled in a non-Development environment but no trusted-proxy posture " +
-			"is declared. Configure Cirreum:ForwardedHeaders:KnownProxies / KnownNetworks for your proxy topology, " +
-			"or set TrustAllProxies=true (un-enumerable PaaS edge; spoofable), or set AcknowledgeLoopbackOnly=true " +
-			"(genuine no-proxy deployment). Boot is blocked to prevent a Development configuration silently reaching " +
-			"Production with forwarded values mis-trusted (ADR-0023).");
+		return null;
 	}
 
 }

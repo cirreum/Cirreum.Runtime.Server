@@ -253,10 +253,11 @@ public sealed class DomainApplicationBuilder
 				o.AddServerHeader = false;
 			});
 
-		// Support Web-Farm/Clustering — trusted-proxy posture from Cirreum:ForwardedHeaders (ADR-0023).
-		// Binds KnownProxies/KnownNetworks/ForwardLimit/Headers, exposes the logged trust-all escape
-		// hatch, and fails fast in non-Development when forwarding is on but no posture is declared.
-		this.Services.ConfigureForwardedHeaders(this.Configuration, this.Environment, forwardedHeaders);
+		// Forwarded headers — platform-gated PlatformIngress default (ADR-0023): a detected managed ingress
+		// (Azure Container Apps / App Service) trusts one hop; Development and undetected platforms stay
+		// loopback-only. No appsettings binding and no boot fail-fast (forwarded scheme/IP/host are not
+		// load-bearing for auth); apps override via services.Configure<ForwardedHeadersOptions>.
+		this.Services.ConfigurePlatformIngress(this.Environment, forwardedHeaders);
 
 		// Allow more time to shutdown
 		if (shutdownTimeoutMinutes > 0) {
