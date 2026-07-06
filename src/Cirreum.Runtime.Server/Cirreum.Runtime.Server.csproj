@@ -19,7 +19,7 @@
 
 		<PackageReference Include="Cirreum.Logging.Deferred" Version="1.0.115" />
 		<PackageReference Include="Cirreum.Cors" Version="1.0.108" />
-		<PackageReference Include="Cirreum.Startup" Version="1.0.118" />
+		<PackageReference Include="Cirreum.Startup" Version="1.0.120" />
 
 	</ItemGroup>
 
@@ -27,12 +27,10 @@
 		<!--
 			Server spine. Cirreum.Services.Server brings Domain (→ Contracts → Kernel),
 			Cirreum.AuthenticationProvider, Cirreum.Exceptions, and Cirreum.Result transitively.
-			Restored at 2.0.0 from the local feed (C:/Cirreum/.localfeed). The published NuGet line
-			is the legacy 1.2.x that dragged Cirreum.Core 5.x onto the graph; the 2.0.0 spine builds
-			on the Kernel/Contracts/Domain triad with the code-first caching surface (Contracts/Domain 1.1.1).
-			This replaces the pre-local-feed ProjectReference workaround.
+			1.3.0 carries ADR-0027 Phase B (connection registry, termination handler,
+			CirreumUserIdProvider) wired inside AddCoreServices() — no wiring needed here.
 		-->
-		<PackageReference Include="Cirreum.Services.Server" Version="2.0.0" />
+		<PackageReference Include="Cirreum.Services.Server" Version="1.3.0" />
 	</ItemGroup>
 
 	<ItemGroup>
