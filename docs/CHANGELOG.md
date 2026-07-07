@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.6] - 2026-07-06
+
 ### Fixed
 
 - Re-pinned `Cirreum.Services.Server` from a never-published `2.0.0` (a local-feed smoke-test version) to the published `1.3.0`, which carries the connection registry, the auth-event connection-termination handler, and `CirreumUserIdProvider` wired inside `AddCoreServices()` (ADR-0027 Phase B). The stale pin made the `v1.1.5` publish fail at restore — **no NuGet artifact ever landed for 1.1.5**; this release is the first published since 1.1.4.
