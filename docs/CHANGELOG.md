@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Updated
+
+- Updated NuGet packages (`OpenTelemetry.Instrumentation.Runtime` 1.15.1 → 1.16.0).
+
 ## [1.1.7] - 2026-07-08
 
 ### Updated
