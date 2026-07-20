@@ -21,16 +21,8 @@
 		<PackageReference Include="Cirreum.Cors" Version="1.0.108" />
 		<PackageReference Include="Cirreum.Startup" Version="1.0.122" />
 
-	</ItemGroup>
-
-	<ItemGroup>
-		<!--
-			Server spine. Cirreum.Services.Server brings Domain (→ Contracts → Kernel),
-			Cirreum.AuthenticationProvider, Cirreum.Exceptions, and Cirreum.Result transitively.
-			1.3.0 carries ADR-0027 Phase B (connection registry, termination handler,
-			CirreumUserIdProvider) wired inside AddCoreServices() — no wiring needed here.
-		-->
 		<PackageReference Include="Cirreum.Services.Server" Version="1.4.0" />
+
 	</ItemGroup>
 
 	<ItemGroup>
