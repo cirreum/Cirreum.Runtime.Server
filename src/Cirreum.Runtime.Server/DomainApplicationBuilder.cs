@@ -4,9 +4,9 @@ using Azure.Identity;
 using Cirreum.Conductor.Configuration;
 using Cirreum.Http.Filters;
 using Cirreum.Logging.Deferred;
-using Cirreum.Security;
 using Cirreum.Runtime.Diagnostics;
 using Cirreum.Runtime.Extensions;
+using Cirreum.Security;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -30,7 +30,7 @@ using System.Reflection;
 /// CORS, and other common infrastructure services.
 /// </para>
 /// <para>
-/// Use the <see cref="DomainApplication.CreateBuilder(string[], int, Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders)"/>
+/// Use the <see cref="DomainApplication.CreateBuilder(string[], int, ForwardedHeaders)"/>
 /// method to create a pre-configured instance of this builder. Then, configure additional services as needed before
 /// calling one of the <see cref="Build()"/> methods.
 /// </para>
@@ -312,8 +312,8 @@ public sealed class DomainApplicationBuilder
 	public IDomainApplicationBuilder ConfigureConductor(Action<ConductorOptionsBuilder> configure) {
 		ArgumentNullException.ThrowIfNull(configure);
 
-		var previousConfig = _conductorConfiguration;
-		_conductorConfiguration = options => {
+		var previousConfig = this._conductorConfiguration;
+		this._conductorConfiguration = options => {
 			previousConfig?.Invoke(options);
 			configure(options);
 		};
