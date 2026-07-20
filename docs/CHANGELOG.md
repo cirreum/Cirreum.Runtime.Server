@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The `Build()`-time registration of the default `IAuthenticationBoundaryResolver`
+  now `TryAdd`s the Kernel default (`Cirreum.Security`) directly — the
+  `AddDefaultAuthenticationBoundaryResolver` extension it previously called was
+  removed with the seam's relocation to `Cirreum.Kernel` (ADR-0032). Semantics are
+  unchanged and deliberate: the registration runs at `Build()`, after the
+  application's composition, so a scheme-aware resolver registered by the
+  Authentication track (primary scheme → `Global`, other authenticated schemes →
+  `Tenant`) or an app-registered custom resolver always wins.
+
 ## [1.1.9] - 2026-07-19
 
 ### Updated

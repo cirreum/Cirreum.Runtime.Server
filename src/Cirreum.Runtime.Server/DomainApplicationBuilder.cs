@@ -4,11 +4,13 @@ using Azure.Identity;
 using Cirreum.Conductor.Configuration;
 using Cirreum.Http.Filters;
 using Cirreum.Logging.Deferred;
+using Cirreum.Security;
 using Cirreum.Runtime.Diagnostics;
 using Cirreum.Runtime.Extensions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.Metrics;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
@@ -409,7 +411,13 @@ public sealed class DomainApplicationBuilder
 		this.Services.AddAuthorizationBuilder();
 
 		this.Services.AddDefaultAuthorizationEvaluator();
-		this.Services.AddDefaultAuthenticationBoundaryResolver();
+
+		// Last-chance authentication-boundary default (authenticated → Global). Runs at
+		// Build() — after the app's composition — so a scheme-aware resolver registered
+		// by the Authentication track (primary scheme → Global, others → Tenant) or an
+		// app-registered custom resolver always wins this TryAdd.
+		this.Services.TryAddSingleton<IAuthenticationBoundaryResolver, DefaultAuthenticationBoundaryResolver>();
+
 		this.Services.AddGrantAuthorization(this.Configuration);
 		this.Services.AddResourceAccess(_ => { });
 
