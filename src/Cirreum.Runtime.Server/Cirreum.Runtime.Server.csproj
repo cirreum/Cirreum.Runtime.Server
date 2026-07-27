@@ -15,13 +15,13 @@
 		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
 		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
 
-		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.5.0" />
+		<PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.6.0" />
 
 		<PackageReference Include="Cirreum.Logging.Deferred" Version="1.0.116" />
 		<PackageReference Include="Cirreum.Cors" Version="1.0.108" />
 		<PackageReference Include="Cirreum.Startup" Version="1.0.122" />
 
-		<PackageReference Include="Cirreum.Services.Server" Version="1.4.3" />
+		<PackageReference Include="Cirreum.Services.Server" Version="1.4.4" />
 
 	</ItemGroup>
 
