@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Updated
 
-- Updated NuGet packages.
+- Updated NuGet packages — picks up the `Cirreum.Domain` 3.0.0 authorization-enforcement wave
+  (fail-open operation-authorization fix + `IPolicyAuthorizer` rename) through the re-pinned
+  `Cirreum.Services.Server` 1.4.5; see Cirreum.Domain `MIGRATION-v3.md`.
 
 ## [1.1.12] - 2026-07-27
 
