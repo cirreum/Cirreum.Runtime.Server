@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-04
+
 ### Added
 
 - **The application-user bootstrap endpoint** (`GET /_cirreum/application-user`, the route
