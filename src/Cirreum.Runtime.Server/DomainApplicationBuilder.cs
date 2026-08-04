@@ -4,12 +4,14 @@ using Azure.Identity;
 using Cirreum.Conductor.Configuration;
 using Cirreum.Http.Filters;
 using Cirreum.Logging.Deferred;
+using Cirreum.RemoteServices;
 using Cirreum.Runtime.Diagnostics;
 using Cirreum.Runtime.Extensions;
 using Cirreum.Security;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.Metrics;
 using OpenTelemetry;
@@ -44,16 +46,18 @@ using System.Reflection;
 /// var builder = DomainApplication.CreateBuilder(args);
 /// 
 /// // Build the application
-/// using var app = builder.Build&lt;ReferencedAsm1&gt;();
-/// 
+/// await using var app = builder.Build&lt;ReferencedAsm1&gt;();
+///
 /// // Configure middleware
 /// app.UseDefaultMiddleware();
-/// 
+///
 /// // Map endpoints
-/// app.MapEndpoints();
-/// 
+/// app.MapApiEndpoints(api => {
+///     // feature endpoint groups
+/// });
+///
 /// // Run the application
-/// await app.InitializeAndRunAsync();
+/// await app.RunAsync();
 /// </code>
 /// </example>
 public sealed class DomainApplicationBuilder
@@ -451,8 +455,51 @@ public sealed class DomainApplicationBuilder
 		ValidateDeferredLogs();
 
 
-		// Build the app!
-		return new(this._innerBuilder.Build());
+		// Build the App!
+		var app = this._innerBuilder.Build();
+
+		// Add Framework Routes
+		this.MapFrameworkEndpoints(app);
+
+		// Return our DomainApplication
+		return new(app);
+
+	}
+
+	/// <summary>
+	/// Maps the framework-owned endpoints onto the built application. Mapping happens here —
+	/// inside the build path rather than a run entry point or an initializer — so every way of
+	/// building the application gets them, and endpoint data sources are not yet materialized.
+	/// </summary>
+	private void MapFrameworkEndpoints(IEndpointRouteBuilder routes) {
+
+		// Application-user bootstrap: mapped when the app registered a resolver
+		// (CirreumAuthenticationBuilder.AddApplicationUserResolver<T>()). The endpoint requires
+		// authentication and nothing else — it is never dispatched through Conductor, so no
+		// authorization gate stands between a disabled caller and the record describing their
+		// state. It reads server-resolved user state and accepts nothing from the request: a
+		// parameter taking an external user id would let any authenticated caller read any
+		// user's record and roles.
+		//
+		// This presence check is an inference, safe while no framework code registers an
+		// IApplicationUserResolver. If the framework ever ships a default resolver, replace it
+		// with an explicit marker from Cirreum.Contracts.
+		if (this.Services.Any(d => d.ServiceType == typeof(IApplicationUserResolver))) {
+			routes
+				.MapGet(ApplicationUserEndpoint.Route, async (IUserStateAccessor userStateAccessor) => {
+					var userState = await userStateAccessor.GetUserState();
+					// Serialize against the runtime type: the state property is declared as
+					// IApplicationUser, and Results.Json's generic overload would serialize by
+					// declared type, silently dropping every app-defined field behind a valid
+					// 200. TValue = object makes System.Text.Json use the instance's runtime
+					// type for the root.
+					return userState.ApplicationUser is { } user
+						? Results.Json<object>(user)
+						: Results.NoContent();
+				})
+				.RequireAuthorization()
+				.ExcludeFromDescription();
+		}
 
 	}
 

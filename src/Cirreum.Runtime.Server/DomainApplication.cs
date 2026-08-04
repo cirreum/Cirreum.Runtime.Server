@@ -14,8 +14,39 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// Provides factory methods for creating domain application builders.
+/// The built Cirreum server application — a wrapper over <see cref="WebApplication"/> that
+/// adds the framework's default middleware pipeline, framework-owned endpoints, health-check
+/// mapping, an optional landing-page redirect, and an initialization-aware
+/// <see cref="RunAsync"/>. Also hosts the static <see cref="CreateBuilder"/> entry point that
+/// begins composition.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Implements <see cref="IApplicationBuilder"/> and <see cref="IEndpointRouteBuilder"/>, so
+/// the standard <c>Use*</c> middleware and <c>Map*</c> endpoint extensions — including
+/// <c>MapApiEndpoints</c>, which applies the framework's Result-to-HTTP filter to a route
+/// group — compose directly against it.
+/// </para>
+/// <para>
+/// The typical flow: <see cref="CreateBuilder"/> → configure services →
+/// <see cref="DomainApplicationBuilder.Build()"/> → <see cref="UseDefaultMiddleware"/> →
+/// <c>MapApiEndpoints</c> / <see cref="MapDefaultHealthChecks"/> /
+/// <see cref="UseLandingPage()"/> → <see cref="RunAsync"/>. <see cref="RunAsync"/> executes
+/// the registered initializers (<see cref="ISystemInitializer"/>, <see cref="IAutoInitialize"/>,
+/// <see cref="IStartupTask"/>) before starting the host and marks startup complete for the
+/// startup health probe once running.
+/// </para>
+/// <para>
+/// Dispose with <c>await using</c> — the type is <see cref="IAsyncDisposable"/> only, by
+/// design. Synchronous disposal of a host tears down the root service provider
+/// synchronously, which throws when any registered singleton implements only
+/// <see cref="IAsyncDisposable"/> — true of most modern SDK clients and of the framework's
+/// own provider clients — so the failure would appear or disappear with the app's
+/// composition. The sync path is omitted rather than documented against; the only
+/// legitimate call site (an async <c>Program</c> awaiting <see cref="RunAsync"/>) pays
+/// nothing for the constraint.
+/// </para>
+/// </remarks>
 public sealed class DomainApplication
 	: IApplicationBuilder, IEndpointRouteBuilder, IAsyncDisposable {
 

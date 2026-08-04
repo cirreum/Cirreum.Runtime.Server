@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **The application-user bootstrap endpoint** (`GET /_cirreum/application-user`, the route
+  constant shipped in `Cirreum.Domain` 4.2.0). Mapped automatically at `Build()` when the
+  service collection contains an `IApplicationUserResolver` registration — no `Map*` call for
+  an app to forget. The endpoint requires authentication and nothing else: it is never
+  dispatched through Conductor, so no authorization gate stands between a disabled caller and
+  the record describing their state — the property that lets a WebAssembly client render
+  `ViewState.Disabled` for the first time. It reads server-resolved user state (accepting
+  nothing from the request), serializes the app's own user type against its runtime type, and
+  returns `204` for a caller with no record.
+
+### Fixed
+
+- **`DomainApplicationBuilder`'s class-level example compiled against an API that does not
+  exist**: `MapEndpoints()` and `InitializeAndRunAsync()` are not members of
+  `DomainApplication` (the surface is `MapApiEndpoints(...)` and `RunAsync()`), and the
+  example's `using var` could never compile — the type is `IAsyncDisposable` only, so it
+  needs `await using`. `DomainApplication`'s class documentation also now describes the type
+  itself (the built application wrapper and its compose-map-run flow) rather than only its
+  static factory.
+
+### Updated
+
+- Re-pinned `Cirreum.Services.Server` `1.4.6` → `1.4.7`, `Cirreum.Logging.Deferred` `1.0.116`
+  → `1.0.117`, `Cirreum.Cors` `1.0.108` → `1.0.109` (Cirreum spine 4.2.0 wave; carries
+  `Cirreum.Domain` 4.2.0 with the shared route constant).
+
 ## [1.1.15] - 2026-07-31
 
 ### Updated
