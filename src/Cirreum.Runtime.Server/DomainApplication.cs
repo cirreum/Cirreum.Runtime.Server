@@ -1,6 +1,7 @@
 ﻿namespace Cirreum.Runtime;
 
 using Cirreum.Health;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -129,63 +130,75 @@ public sealed class DomainApplication
 
 
 	/// <summary>
-	/// Use the default middleware pipeline optimized for stateless API applications.
+	/// Configures the default middleware pipeline for the domain runtime.
 	/// </summary>
 	/// <remarks>
-	/// Configures the application pipeline with the following middleware in order:
-	/// - Exception handling
-	/// - Forwarded headers (for proxy/load balancer scenarios)
-	/// - Static files
-	/// - Routing
-	/// - Request timeouts
-	/// - CORS (Cross-Origin Resource Sharing)
-	/// - Authentication
-	/// - Authorization
-	/// - Invocation Context (HTTP→IInvocationContext bridge)
-	/// - Output Caching (modern replacement for response caching)
-	///
 	/// <para>
-	/// <strong>Not Included (By Design):</strong>
+	/// The configured pipeline varies slightly by <see cref="DomainRuntimeType"/>.
+	/// <see cref="DomainRuntimeType.WebApi"/> targets stateless, bearer- and
+	/// machine-authenticated APIs and does not include antiforgery middleware.
+	/// <see cref="DomainRuntimeType.WebApp"/> additionally includes antiforgery protection
+	/// for cookie-authenticated browser applications.
+	/// </para>
+	/// <para>
+	/// Web API endpoints that bind form data and do not use ambient credentials should
+	/// explicitly opt out of antiforgery validation with <c>DisableAntiforgery</c>.
+	/// </para>
+	/// <para>
+	/// <strong>Configures the following middleware, in order:</strong>
 	/// </para>
 	/// <list type="bullet">
-	///   <item>Response Compression - Better handled at reverse proxy/CDN level</item>
-	///   <item>Response Caching - Superseded by Output Caching for APIs</item>
-	///   <item>Rate Limiting - Configure manually based on specific requirements</item>
-	///   <item>Sessions - This framework targets stateless APIs</item>
+	///   <item>Exception handling</item>
+	///   <item>Forwarded headers for proxy and load-balancer scenarios</item>
+	///   <item>Static files</item>
+	///   <item>Routing</item>
+	///   <item>Request timeouts</item>
+	///   <item>CORS (Cross-Origin Resource Sharing)</item>
+	///   <item>Authentication</item>
+	///   <item>Authorization</item>
+	///   <item>Antiforgery for WebApp runtimes</item>
+	///   <item>Invocation context (HTTP → <c>IInvocationContext</c> bridge)</item>
+	///   <item>Output caching</item>
+	/// </list>
+	/// <para>
+	/// <strong>Not included by design:</strong>
+	/// </para>
+	/// <list type="bullet">
+	///   <item>Response compression — typically better handled by a reverse proxy or CDN</item>
+	///   <item>Response caching — superseded by output caching</item>
+	///   <item>Rate limiting — configure explicitly based on application requirements</item>
+	///   <item>Sessions — Cirreum applications are expected to remain stateless</item>
 	/// </list>
 	/// </remarks>
 	public void UseDefaultMiddleware() {
 
 		// Natural Order
-		// https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-9.0#middleware-order
-		/*
-			app.UseStaticFiles();
-			app.UseCookiePolicy();
-
-			app.UseRouting();
-			app.UseRateLimiter();
-			app.UseRequestLocalization();
-			app.UseCors();
-
-			app.UseAuthentication();
-			app.UseAuthorization();
-			app.UseSession();
-			app.UseResponseCompression();
-			app.UseResponseCaching();
-		 
-		 */
-
+		// https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/middleware
 		this
 			.UseExceptionHandler()
 			.UseForwardedHeaders()
 			.UseStaticFiles()
 			.UseRouting()
 			.UseRequestTimeouts()
-			.UseConfiguredCors() // Apply CORS policies
-			.UseAuthentication()    // Authenticate the user
-			.UseAuthorization()     // Authorize the user
-			.UseInvocationContext() // Publish IInvocationContext for the request
-			.UseOutputCache();
+			.UseConfiguredCors()  // Apply CORS policies
+			.UseAuthentication() // Authenticate the user
+			.UseAuthorization(); // Authorize the user
+
+		// Antiforgery middleware must run after authentication and authorization
+		// to prevent reading form data when the user is unauthenticated.
+		var domainEnv = this.Services.GetRequiredService<IDomainEnvironment>();
+		if (domainEnv.RuntimeType == DomainRuntimeType.WebApp) {
+			this.UseAntiforgery();
+		}
+
+		// Add support for Cirreum invocation features, providing access to
+		// the current HTTP context and other request-specific information.
+		this.UseInvocationContext();
+
+		// Output caching should be applied after authentication and authorization
+		// to ensure cached responses are served only to authorized users.
+		this.UseOutputCache();
+
 	}
 
 	/// <summary>
@@ -312,6 +325,52 @@ public sealed class DomainApplication
 				CreateOptions(_ => true))
 			.DisableHttpMetrics();
 
+	}
+
+	/// <summary>
+	/// Maps an authenticated endpoint that issues an antiforgery request token.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// This endpoint is available only for <see cref="DomainRuntimeType.WebApp"/> runtimes
+	/// and throws if mapped for any other runtime type.
+	/// </para>
+	/// <para>
+	/// The endpoint stores the antiforgery cookie and returns the corresponding request token.
+	/// Clients should include the returned token in subsequent protected requests using
+	/// <see cref="DomainAntiforgeryDefaults.HeaderName"/>.
+	/// </para>
+	/// </remarks>
+	/// <param name="pattern">
+	/// The route pattern for the token endpoint.
+	/// Defaults to <see cref="DomainAntiforgeryDefaults.TokenEndpoint"/>.
+	/// </param>
+	/// <returns>
+	/// The endpoint convention builder for the mapped antiforgery token endpoint.
+	/// </returns>
+	/// <exception cref="InvalidOperationException">
+	/// The domain runtime is not configured as <see cref="DomainRuntimeType.WebApp"/>.
+	/// </exception>
+	public IEndpointConventionBuilder MapDefaultAntiforgeryToken(
+		string pattern = DomainAntiforgeryDefaults.TokenEndpoint) {
+
+		var domainEnv = this.Services.GetRequiredService<IDomainEnvironment>();
+		if (domainEnv.RuntimeType != DomainRuntimeType.WebApp) {
+			throw new InvalidOperationException(
+				"Antiforgery token endpoints are only supported for WebApp domain runtimes.");
+		}
+
+		return this
+			.MapGet(pattern, (
+				IAntiforgery antiforgery,
+				HttpContext context) => {
+					var tokens = antiforgery.GetAndStoreTokens(context);
+					return Results.Ok(new {
+						token = tokens.RequestToken
+					});
+				})
+			.RequireAuthorization()
+			.ExcludeFromDescription();
 	}
 
 	/// <inheritdoc/>

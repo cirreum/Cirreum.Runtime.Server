@@ -80,9 +80,9 @@ When extending this library:
 
 ### Key Dependencies
 
-- **Microsoft.Identity.Web** - Authentication and authorization
+- **Microsoft.AspNetCore.App** (framework reference) - ASP.NET Core, including antiforgery for WebApp runtimes
 - **Azure.Monitor.OpenTelemetry.AspNetCore** - Azure monitoring
 - **OpenTelemetry** packages - Observability
-- **Cirreum** packages - Foundation framework components
+- **Cirreum.Services.Server / Cirreum.Cors / Cirreum.Startup / Cirreum.Logging.Deferred** - Foundation framework components
 
 The library is designed as a stable foundation with careful API evolution. Breaking changes are rare and impact the entire Cirreum ecosystem.

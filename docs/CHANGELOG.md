@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **WebApp antiforgery.** A `DomainRuntimeType.WebApp` runtime — the only posture whose
+  authentication rides an ambient credential (the cookie session) — now gets CSRF protection
+  from the runtime: antiforgery services are registered at builder construction with the
+  request-token header set to `DomainAntiforgeryDefaults.HeaderName` (`X-CSRF-TOKEN`), and
+  `UseDefaultMiddleware()` places `UseAntiforgery()` after authorization, where tokens bind to
+  the resolved identity. `MapDefaultAntiforgeryToken()` maps an authenticated, WebApp-only
+  endpoint (default `/_cirreum/antiforgery/token`, excluded from OpenAPI like the other
+  framework routes) that stores the antiforgery cookie and returns the request token for
+  browser clients to echo in the header.
+- `DomainAntiforgeryDefaults` — the framework route prefix, header name, and default token
+  endpoint route.
+
+### Changed
+
+- `UseDefaultMiddleware()` states its posture per runtime type: `WebApi` targets stateless,
+  bearer- and machine-authenticated APIs and includes no antiforgery middleware — form-binding
+  endpoints with no ambient credential opt out per endpoint with `DisableAntiforgery`. The
+  middleware-order reference now points at the minimal-APIs article rather than the web-apps
+  one.
+
+### Updated
+
+- Updated NuGet packages (`Cirreum.Services.Server` 1.5.0 — the attribute-authority consumer
+  side: subject-kind resolution, effective-scheme dispatch, fill-only app-name fallback).
+
 ## [1.2.0] - 2026-08-04
 
 ### Added

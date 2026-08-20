@@ -15,10 +15,11 @@
 ## Key Features
 
 - **Simplified Application Bootstrap** - Fluent builder pattern for configuring ASP.NET Core applications with sensible defaults
-- **Default Middleware Pipeline** - `UseDefaultMiddleware()` wires the canonical ordering for stateless APIs, including the HTTP→`IInvocationContext` bridge for the unified inbound seam
+- **Default Middleware Pipeline** - `UseDefaultMiddleware()` wires the canonical ordering for the declared runtime posture (`WebApi` or `WebApp`), including the HTTP→`IInvocationContext` bridge for the unified inbound seam
+- **WebApp Antiforgery** - `DomainRuntimeType.WebApp` runtimes register antiforgery services, run `UseAntiforgery()` after authorization, and can map an authenticated token endpoint (`MapDefaultAntiforgeryToken()`) for browser clients
 - **Built-in Observability** - OpenTelemetry integration with Azure Monitor and OTLP exporter support
 - **Health Check Endpoints** - Pre-configured startup, liveness, readiness, and internal health checks
-- **Authentication Ready** - Microsoft Identity Web integration for authentication and authorization
+- **Framework Endpoints** - the application-user bootstrap endpoint (`/_cirreum/application-user`) mapped automatically when an `IApplicationUserResolver` is registered
 - **CORS Support** - Configurable cross-origin resource sharing with environment-based settings
 - **Deferred Logging** - Optimized startup logging that captures and replays logs after initialization
 
@@ -56,14 +57,21 @@ app
     .UseRequestTimeouts()
     .UseConfiguredCors()
     .UseAuthentication()
-    .UseAuthorization()
+    .UseAuthorization();
+
+// WebApp runtimes only — tokens bind to the resolved identity
+app.UseAntiforgery();
+
+app
     .UseInvocationContext()    // HTTP→IInvocationContext bridge
     .UseOutputCache();
 ```
 
 `UseInvocationContext()` runs late on purpose — after authentication and authorization complete — so the snapshotted `IInvocationContext.User` reflects the fully-resolved authenticated principal. Framework-internal code (`UserStateAccessor`, the conductor pipeline, authorizers, audit) then reads identity through the unified seam regardless of transport.
 
-**Not included by design:** Response Compression (handle at proxy/CDN), Response Caching (superseded by Output Caching), Rate Limiting (configure per requirements), Sessions (this framework targets stateless APIs).
+The pipeline varies by the declared runtime posture (`Cirreum:Runtime`): **`WebApi`** targets stateless, bearer- and machine-authenticated APIs with no ambient credential, so no antiforgery middleware is included — an endpoint that binds form data (`[FromForm]`, `IFormFile`) opts out per endpoint with `DisableAntiforgery`. **`WebApp`** authenticates browsers with a cookie session — an ambient credential — so the runtime registers antiforgery (request-token header `X-CSRF-TOKEN`) and places `UseAntiforgery()` after authorization. `MapDefaultAntiforgeryToken()` adds an authenticated endpoint (default `/_cirreum/antiforgery/token`) that stores the antiforgery cookie and returns the request token.
+
+**Not included by design:** Response Compression (handle at proxy/CDN), Response Caching (superseded by Output Caching), Rate Limiting (configure per requirements), Sessions (Cirreum applications are expected to remain stateless).
 
 ## Configuration
 
@@ -72,7 +80,7 @@ The runtime supports configuration through appsettings.json and environment vari
 ```json
 {
   "Cirreum": {
-    "Runtime": "WebApi",
+    "Runtime": "WebApi",   // or "WebApp" — declares the posture the pipeline configures for
     "Diagnostics": {
       "EnableTelemetry": true,
       "EnableMetrics": true,

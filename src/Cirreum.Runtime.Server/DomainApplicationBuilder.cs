@@ -248,6 +248,11 @@ public sealed class DomainApplicationBuilder
 			return new DomainEnvironment(hostEnv.ApplicationName, hostEnv.EnvironmentName, runtimeType);
 		});
 
+		if (runtimeType == DomainRuntimeType.WebApp) {
+			this.Services.AddAntiforgery(options => {
+				options.HeaderName = DomainAntiforgeryDefaults.HeaderName;
+			});
+		}
 
 		// ******************************************************************************
 		// Configure our default ASP.NET Options
