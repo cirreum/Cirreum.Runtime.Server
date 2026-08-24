@@ -56,6 +56,7 @@ app
     .UseRouting()
     .UseRequestTimeouts()
     .UseConfiguredCors()
+    .UseConnectionCredential()
     .UseAuthentication()
     .UseAuthorization();
 
@@ -66,6 +67,8 @@ app
     .UseInvocationContext()    // HTTP→IInvocationContext bridge
     .UseOutputCache();
 ```
+
+`UseConnectionCredential()` sits between CORS and authentication because both neighbours are load-bearing: the endpoint must already be resolved for the scoping test, and the credential must be in the `Authorization` header before any scheme reads it. It promotes an `access_token` query parameter into that header on connection endpoints only — a SignalR hub, or an endpoint carrying `InvocationConnectionMetadata` — and only when the request carries no `Authorization` header of its own. A browser cannot set headers on a WebSocket upgrade, so the query is the only credential location available to it; on any other endpoint a query parameter carries no authority.
 
 `UseInvocationContext()` runs late on purpose — after authentication and authorization complete — so the snapshotted `IInvocationContext.User` reflects the fully-resolved authenticated principal. Framework-internal code (`UserStateAccessor`, the conductor pipeline, authorizers, audit) then reads identity through the unified seam regardless of transport.
 

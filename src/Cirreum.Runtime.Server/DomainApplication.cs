@@ -154,6 +154,7 @@ public sealed class DomainApplication
 	///   <item>Routing</item>
 	///   <item>Request timeouts</item>
 	///   <item>CORS (Cross-Origin Resource Sharing)</item>
+	///   <item>Connection credentials (query-carried credential promotion)</item>
 	///   <item>Authentication</item>
 	///   <item>Authorization</item>
 	///   <item>Antiforgery for WebApp runtimes</item>
@@ -181,6 +182,7 @@ public sealed class DomainApplication
 			.UseRouting()
 			.UseRequestTimeouts()
 			.UseConfiguredCors()  // Apply CORS policies
+			.UseConnectionCredential() // Promote a query-carried credential on connection endpoints
 			.UseAuthentication() // Authenticate the user
 			.UseAuthorization(); // Authorize the user
 

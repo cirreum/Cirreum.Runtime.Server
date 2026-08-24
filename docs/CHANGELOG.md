@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Query-carried credentials work on connection endpoints out of the box.** A browser cannot
+  set request headers on a WebSocket upgrade, so a client connecting over WebSockets sends its
+  bearer token as an `access_token` query parameter. `UseDefaultMiddleware()` now calls
+  `UseConnectionCredential()` between CORS and authentication, which promotes that credential
+  into the `Authorization` header before any scheme reads it — so every scheme and every scheme
+  selector resolves it from the one place they always have.
+
+  The promotion is scoped to endpoints where a client has no alternative: a SignalR hub, or an
+  endpoint carrying `InvocationConnectionMetadata`, and only when the request has no
+  `Authorization` header of its own. A query parameter on any other endpoint carries no
+  authority. An application composing its own pipeline places the call itself.
+
+### Updated
+
+- Updated NuGet packages.
+
 ## [1.3.0] - 2026-08-20
 
 ### Added
