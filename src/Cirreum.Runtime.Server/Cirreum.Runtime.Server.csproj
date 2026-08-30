@@ -21,7 +21,7 @@
 		<PackageReference Include="Cirreum.Cors" Version="1.0.110" />
 		<PackageReference Include="Cirreum.Startup" Version="1.0.124" />
 
-		<PackageReference Include="Cirreum.Services.Server" Version="1.6.2" />
+		<PackageReference Include="Cirreum.Services.Server" Version="1.6.3" />
 
 	</ItemGroup>
 
