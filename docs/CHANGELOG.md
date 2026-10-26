@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Updated
+
+- **`Cirreum.Services.Server`** — `1.7.0` → `1.7.1` (direct Contracts reference removed; Domain is the spine entry).
+
 ## [1.4.4] - 2026-10-26
 
 ### Updated
